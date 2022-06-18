@@ -1,6 +1,7 @@
 library(tidyverse)
 library(scales)
 
+
 t_data <- read_csv("data/GLB.Ts+dSST.csv", skip = 1, na ="***") %>%
   select(year = Year, t_diff = `J-D`) %>% 
   drop_na()
