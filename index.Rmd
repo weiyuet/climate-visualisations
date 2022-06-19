@@ -97,7 +97,7 @@ t_data %>%
                     values = rescale(c(min(t_data$t_diff), 0 , max(t_data$t_diff))),
                     n.breaks = 12) +
   coord_cartesian(expand = FALSE) +
-  scale_x_continuous(breaks = seq(1890, 2020, 30)) +
+  scale_x_continuous(breaks = seq(1890, 2020, 20)) +
   labs(title = glue("Global Temperature Change ({min(t_data$year)}-{max(t_data$year)})")) +
   theme_void() +
   theme(
