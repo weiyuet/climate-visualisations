@@ -12,7 +12,7 @@ read_csv("data/GLB.Ts+dSST.csv", skip = 1, na = "***") %>%
   scale_y_continuous(limits = c(-0.5, 1.5), expand = c(0,0)) +
   scale_colour_manual(name = NULL, breaks = c(1,2), values = c("gray", "black"), labels = c("Annual mean", "Loess smoothing"),
                       guide = guide_legend(override.aes = list(shape = 15, size = 5))) +
-  labs(x = "", y = "Temperature Anomaly w.r.t 1951-1980 (C)",
+  labs(x = "", y = "Temperature Anomaly w.r.t 1951-1980 (\u00B0C)",
        title = "Global Annual Mean Surface Air Temperature Change",
        subtitle = "Data source: NASA's Goddard Institute for Space Studies (GISS).\nCredit: NASA/GISS") +
   theme_light() +

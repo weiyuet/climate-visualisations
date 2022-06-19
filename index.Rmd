@@ -15,6 +15,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 library(tidyverse)
 library(scales)
+library(glue)
 ```
 
 ## GISS Surface Temperature Analysis (GISTEMP v4)
@@ -35,7 +36,7 @@ read_csv("data/GLB.Ts+dSST.csv", skip = 1, na = "***") %>%
   scale_x_continuous(breaks = seq(1880, 2023, 20), expand = c(0,0)) +
   scale_y_continuous(limits = c(-0.5, 1.5), expand = c(0,0)) +
   scale_colour_manual(name = NULL, breaks = c(1,2), values = c("gray", "black"), labels = c("Annual mean", "Loess smoothing"), guide = guide_legend(override.aes = list(shape = 15, size = 5))) +
-  labs(x = "", y = "Temperature Anomaly w.r.t 1951-1980 (C)",
+  labs(x = "", y = "Temperature Anomaly w.r.t 1951-1980 (\u00B0C)",
        title = "Global Annual Mean Surface Air Temperature Change",
        subtitle = "Data source: NASA's Goddard Institute for Space Studies (GISS).\nCredit: NASA/GISS") +
   theme_light() +
@@ -71,7 +72,7 @@ t_data %>%
   geom_col(show.legend = FALSE) +
   geom_text(data = annotation, aes(x = x, label = year), colour = "white") +
   geom_text(x = 1880, y = 1, hjust = 0,
-            label = "Global Temperatures have increased by over 1.2\u00B0C since 1880",
+            label = "Global temperatures have increased by over 1.2\u00B0C since 1880",
             colour = "white") +
   scale_fill_stepsn(colours = c("darkblue", "white", "darkred"),
                     values = rescale(c(min(t_data$t_diff), 0, max(t_data$t_diff))),
@@ -79,5 +80,33 @@ t_data %>%
                     n.breaks = 9) +
   theme_void() +
   theme(plot.background = element_rect(fill = "black"))
+```
+
+### Temperature Stripe Plot
+
+```{r Temperature Stripe Plot}
+
+t_data <- read_csv("data/GLB.Ts+dSST.csv", skip = 1, na = "***") %>% 
+  select(year = Year, t_diff = `J-D`) %>% 
+  drop_na()
+
+t_data %>% 
+  ggplot(aes(x = year, y = 1, fill = t_diff)) +
+  geom_tile(show.legend = FALSE) +
+  scale_fill_stepsn(colours = c("#08306B", "white", "#67000D"),
+                    values = rescale(c(min(t_data$t_diff), 0 , max(t_data$t_diff))),
+                    n.breaks = 12) +
+  coord_cartesian(expand = FALSE) +
+  scale_x_continuous(breaks = seq(1890, 2020, 30)) +
+  labs(title = glue("Global Temperature Change ({min(t_data$year)}-{max(t_data$year)})")) +
+  theme_void() +
+  theme(
+    axis.text.x = element_text(colour = "white",
+                               margin = margin(t = 5, b = 10, unit = "pt")),
+    plot.title = element_text(colour = "white",
+                              margin = margin(b = 5, t = 10, unit ="pt"),
+                              hjust = 0.05),
+    plot.background = element_rect(fill = "black"))
+
 ```
 
