@@ -1,5 +1,6 @@
 library(tidyverse)
 library(scales)
+library(glue)
 
 
 t_data <- read_csv("data/GLB.Ts+dSST.csv", skip = 1, na ="***") %>%
@@ -17,7 +18,7 @@ t_data %>%
   geom_col(show.legend = FALSE) +
   geom_text(data = annotation, aes(x = x, label = year), colour = "white") +
   geom_text(x = 1880, y = 1, hjust = 0,
-            label = "Global temperatures have increased by over 1.2\u00B0C since 1880",
+            label = glue("Global temperatures have increased by over {max(t_data$t_diff)}\u00B0C since {min(t_data$year)}"),
             colour = "white") +
   scale_fill_stepsn(colours = c("darkblue", "white", "darkred"),
                     values = rescale(c(min(t_data$t_diff), 0, max(t_data$t_diff))),

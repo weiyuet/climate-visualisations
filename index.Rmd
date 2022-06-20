@@ -72,7 +72,7 @@ t_data %>%
   geom_col(show.legend = FALSE) +
   geom_text(data = annotation, aes(x = x, label = year), colour = "white") +
   geom_text(x = 1880, y = 1, hjust = 0,
-            label = "Global temperatures have increased by over 1.2\u00B0C since 1880",
+            label = glue("Global temperatures have increased by over {max(t_data$t_diff)}\u00B0C since {min(t_data$year)}"),
             colour = "white") +
   scale_fill_stepsn(colours = c("darkblue", "white", "darkred"),
                     values = rescale(c(min(t_data$t_diff), 0, max(t_data$t_diff))),
@@ -107,6 +107,61 @@ t_data %>%
                               margin = margin(b = 5, t = 10, unit ="pt"),
                               hjust = 0.05),
     plot.background = element_rect(fill = "black"))
+
+```
+
+### Temperature Line Plot
+
+```{r Temperature Line Plot}
+
+t_diff <- read_csv("data/GLB.Ts+dSST.csv", skip = 1, na = "***") %>% 
+  select(year = Year, month.abb) %>% 
+  drop_na() %>% 
+  pivot_longer(-year, names_to = "month", values_to = "t_diff") %>% 
+  mutate(month = factor(month, levels = month.abb))
+
+last_dec <- t_diff %>% 
+  filter(month == "Dec") %>% 
+  mutate(year = year + 1,
+         month = "last_Dec")
+
+next_jan <- t_diff %>% 
+  filter(month == "Jan") %>% 
+  mutate(year = year - 1,
+         month = "next_Jan")
+
+bind_rows(last_dec, t_diff, next_jan) %>% 
+  mutate(month = factor(month, levels = c("last_Dec", month.abb, "next_Jan")),
+         month_number = as.numeric(month) - 1) %>% 
+  ggplot(aes(x = month_number, y = t_diff, group = year, colour = year)) +
+  geom_hline(yintercept = 0, colour = "white") +
+  geom_line() +
+  scale_colour_viridis_c(breaks = seq(1880, 2020, 20),
+                         guide = guide_colorbar(frame.colour = "white", 
+                                                frame.linewidth = 1)) +
+  scale_x_continuous(breaks = 1:12,
+                     labels = month.abb,
+                     sec.axis = dup_axis(name = NULL, labels = NULL)) +
+  scale_y_continuous(breaks = seq(-2, 2, 0.2),
+                     sec.axis = dup_axis(name = NULL, labels = NULL)) +
+  coord_cartesian(xlim = c(1,12)) +
+  labs(x = NULL,
+       y = "Temperature change since pre-industrial era [\u00B0C]",
+       title = glue("Global temperature change since {min(t_diff$year)} by month")) +
+  theme(
+    panel.background = element_rect(fill = "black", colour = "white", size = 1),
+    plot.background = element_rect(fill = "#444444"),
+    panel.grid = element_blank(),
+    axis.text = element_text(colour = "white", size = 13),
+    axis.ticks = element_line(colour = "white"),
+    axis.ticks.length = unit(-5, "pt"),
+    axis.title = element_text(colour = "white", size = 13),
+    plot.title = element_text(colour = "white", size = 15, hjust = 0.5),
+    legend.title = element_blank(),
+    legend.background = element_rect(fill = NA),
+    legend.text = element_text(colour = "white"),
+    legend.key.height = unit(55,"pt")
+  )
 
 ```
 
