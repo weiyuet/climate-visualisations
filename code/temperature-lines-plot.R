@@ -17,23 +17,36 @@ next_jan <- t_diff %>%
   mutate(year = year - 1,
          month = "next_Jan")
 
-bind_rows(last_dec, t_diff, next_jan) %>% 
+t_data <- bind_rows(last_dec, t_diff, next_jan) %>% 
   mutate(month = factor(month, levels = c("last_Dec", month.abb, "next_Jan")),
-         month_number = as.numeric(month) - 1) %>% 
-  ggplot(aes(x = month_number, y = t_diff, group = year, colour = year)) +
+         month_number = as.numeric(month) - 1,
+         this_year = year == 2022)
+
+annotation <- t_data %>% 
+  slice_max(year) %>% 
+  slice_max(month_number)
+  
+t_data %>% 
+  ggplot(aes(x = month_number, y = t_diff, group = year, colour = year, size = this_year)) +
   geom_hline(yintercept = 0, colour = "white") +
   geom_line() +
-  scale_colour_viridis_c(breaks = seq(1880, 2020, 20),
-                         guide = guide_colorbar(frame.colour = "white", 
-                                                frame.linewidth = 1)) +
+  geom_text(data = annotation,
+            aes(x = month_number, y = t_diff, label = year, colour = year), 
+            inherit.aes = FALSE,
+            hjust = 0, size = 5, nudge_x = 0.15, fontface = "bold") +
   scale_x_continuous(breaks = 1:12,
                      labels = month.abb,
                      sec.axis = dup_axis(name = NULL, labels = NULL)) +
   scale_y_continuous(breaks = seq(-2, 2, 0.2),
                      sec.axis = dup_axis(name = NULL, labels = NULL)) +
+  scale_size_manual(breaks = c(FALSE, TRUE),
+                    values = c(0.25, 1), guide = "none") +
+  scale_colour_viridis_c(breaks = seq(1880, 2020, 20),
+                         guide = guide_colorbar(frame.colour = "white", 
+                                                frame.linewidth = 1)) +
   coord_cartesian(xlim = c(1,12)) +
   labs(x = NULL,
-       y = "Temperature change since pre-industrial era [\u00B0C]",
+       y = "Temperature change since pre-industrial times [\u00B0C]",
        title = glue("Global temperature change since {min(t_diff$year)} by month")) +
   theme(
     panel.background = element_rect(fill = "black", colour = "white", size = 1),
