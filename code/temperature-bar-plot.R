@@ -27,4 +27,4 @@ t_data %>%
   theme_void() +
   theme(plot.background = element_rect(fill = "black"))
 
-ggsave("figures/temperature-bar-plot.png", width = 7, height = 4)
+ggsave("figures/temperature-bar-plot.png", width = 7, height = 5)
