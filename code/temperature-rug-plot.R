@@ -30,7 +30,8 @@ zone_data %>%
                          midpoint = 0, guide = "none") +
   labs(x = "Temperature anomaly (\u00B0C)", y = "",
        title = "Temperature Anomaly by Latitude (1880 - 2021)",
-       subtitle = "Bars for 2021 are coloured by the size of the anomaly") +
+       subtitle = "Bars for 2021 are coloured by the size of the anomaly",
+       caption = "Source: GISS Surface Temperature Analysis (GISTEMP)/Model - NASA/GISS") +
   theme(plot.background = element_rect(fill = "black", colour = "black"),
         panel.background = element_rect(fill = "black"),
         plot.title = element_text(colour = "white", face = "bold"),
@@ -38,6 +39,7 @@ zone_data %>%
         plot.title.position = "plot",
         axis.text = element_text(colour = "white"),
         axis.title = element_text(colour = "white"),
+        plot.caption = element_text(colour = "white"),
         panel.grid.major.x = element_line(colour = "gray", size = 0.25),
         panel.grid.minor.x = element_blank(),
         panel.grid.major.y = element_blank(),
