@@ -35,7 +35,8 @@ read_csv("data/GLB.Ts+dSST.csv", skip = 1, na = "***") %>%
   geom_smooth(se = FALSE, aes(colour = "2"), size = 0.5, span = 0.2, show.legend = FALSE) + 
   scale_x_continuous(breaks = seq(1880, 2023, 20), expand = c(0,0)) +
   scale_y_continuous(limits = c(-0.5, 1.5), expand = c(0,0)) +
-  scale_colour_manual(name = NULL, breaks = c(1,2), values = c("gray", "black"), labels = c("Annual mean", "Loess smoothing"), guide = guide_legend(override.aes = list(shape = 15, size = 5))) +
+  scale_colour_manual(name = NULL, breaks = c(1,2), values = c("gray", "black"), labels = c("Annual mean", "Loess smoothing"),
+                      guide = guide_legend(override.aes = list(shape = 15, size = 5))) +
   labs(x = "", y = "Temperature Anomaly w.r.t 1951-1980 (\u00B0C)",
        title = "Global Annual Mean Surface Air Temperature Change",
        subtitle = "Data source: NASA's Goddard Institute for Space Studies (GISS).\nCredit: NASA/GISS") +
@@ -49,6 +50,7 @@ read_csv("data/GLB.Ts+dSST.csv", skip = 1, na = "***") %>%
         legend.title = element_text(size = 0),
         legend.key.height = unit(10, "pt"),
         legend.margin = margin(0,0,0,0))
+
 ```
 
 GISTEMP Team, 2022: GISS Surface Temperature Analysis (GISTEMP), version 4. NASA Goddard Institute for Space Studies. Dataset accessed 2022-06-19 at https://data.giss.nasa.gov/gistemp/.
@@ -80,6 +82,7 @@ t_data %>%
                     n.breaks = 9) +
   theme_void() +
   theme(plot.background = element_rect(fill = "black"))
+
 ```
 
 ### Temperature Stripe Plot
@@ -110,9 +113,9 @@ t_data %>%
 
 ```
 
-### Temperature Line Plot
+### Temperature Lines Plot
 
-```{r Temperature Line Plot}
+```{r Temperature Lines Plot}
 
 t_diff <- read_csv("data/GLB.Ts+dSST.csv", skip = 1, na = "***") %>% 
   select(year = Year, month.abb) %>% 
@@ -160,7 +163,7 @@ t_data %>%
   coord_cartesian(xlim = c(1,12)) +
   labs(x = NULL,
        y = "Temperature change since pre-industrial times [\u00B0C]",
-       title = glue("Global temperature change since {min(t_diff$year)} by month")) +
+       title = glue("Global Temperature Change Since {min(t_diff$year)} (monthly)")) +
   theme(
     panel.background = element_rect(fill = "black", colour = "white", size = 1),
     plot.background = element_rect(fill = "#444444"),
@@ -175,6 +178,56 @@ t_data %>%
     legend.text = element_text(colour = "white"),
     legend.key.height = unit(55,"pt")
   )
+
+```
+
+### Temperature Rug Plot
+
+```{r Temperature Rug Plot}
+
+# Load data
+zone_data <- read_csv("https://data.giss.nasa.gov/gistemp/tabledata_v4/ZonAnn.Ts+dSST.csv")
+
+# Wrangle data
+bands <- rev(c("64N-90N", "44N-64N", "24N-44N", "EQU-24N", "24S-EQU", "44S-24S", "64S-44S", "90S-64S"))
+
+zone_data <- read_csv("https://data.giss.nasa.gov/gistemp/tabledata_v4/ZonAnn.Ts+dSST.csv") %>%
+  select(year = Year, all_of(bands)) %>%
+  pivot_longer(-year, names_to = "zone", values_to = "t_diff") %>%
+  mutate(zone = factor(zone, levels = bands),
+         zone_position = as.numeric(zone))
+
+current_year <- zone_data %>% filter(year == 2021)
+
+# Plot
+zone_data %>%
+  ggplot(aes(x = t_diff, xend = t_diff,
+             y = zone_position - 0.25, yend = zone_position + 0.25)) +
+  geom_segment(colour = "white", alpha = 0.25) +
+  geom_segment(data = current_year,
+               aes(colour = t_diff), size = 2, lineend = "round") +
+  scale_y_continuous(breaks = 1:8,
+                     labels = bands) +
+  scale_x_continuous(breaks = seq(-3, 4, 1),
+                     labels = seq(-3, 4, 1),
+                     limits = c(-3, 4)) +
+  scale_colour_gradient2(low = "darkblue", mid = "white", high = "darkred",
+                         midpoint = 0, guide = "none") +
+  labs(x = "Temperature anomaly (\u00B0C)", y = "",
+       title = "Temperature Anomaly by Latitude (1880 - 2021)",
+       subtitle = "Bars for 2021 are coloured by the size of the anomaly") +
+  theme(plot.background = element_rect(fill = "black", colour = "black"),
+        panel.background = element_rect(fill = "black"),
+        plot.title = element_text(colour = "white", face = "bold"),
+        plot.subtitle = element_text(colour = "gray", size = 9),
+        plot.title.position = "plot",
+        axis.text = element_text(colour = "white"),
+        axis.title = element_text(colour = "white"),
+        panel.grid.major.x = element_line(colour = "gray", size = 0.25),
+        panel.grid.minor.x = element_blank(),
+        panel.grid.major.y = element_blank(),
+        panel.grid.minor.y = element_line(colour = "white"),
+        axis.ticks = element_blank())
 
 ```
 

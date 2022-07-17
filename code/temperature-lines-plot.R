@@ -47,7 +47,7 @@ t_data %>%
   coord_cartesian(xlim = c(1,12)) +
   labs(x = NULL,
        y = "Temperature change since pre-industrial times [\u00B0C]",
-       title = glue("Global temperature change since {min(t_diff$year)} by month")) +
+       title = glue("Global Temperature Change Since {min(t_diff$year)} (monthly)")) +
   theme(
     panel.background = element_rect(fill = "black", colour = "white", size = 1),
     plot.background = element_rect(fill = "#444444"),
