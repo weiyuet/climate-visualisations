@@ -48,8 +48,7 @@ t_data %>%
   labs(x = NULL,
        y = "Temperature change since pre-industrial times [\u00B0C]",
        title = glue("Global Temperature Change Since {min(t_diff$year)} (monthly)")) +
-  theme(
-    panel.background = element_rect(fill = "black", colour = "white", size = 1),
+  theme(panel.background = element_rect(fill = "black", colour = "white", size = 1),
     plot.background = element_rect(fill = "#444444"),
     panel.grid = element_blank(),
     axis.text = element_text(colour = "white", size = 13),
@@ -60,7 +59,6 @@ t_data %>%
     legend.title = element_blank(),
     legend.background = element_rect(fill = NA),
     legend.text = element_text(colour = "white"),
-    legend.key.height = unit(55,"pt")
-  )
+    legend.key.height = unit(55,"pt"))
 
 ggsave("figures/temperature-lines-plot.png", width = 8, height = 4.5)

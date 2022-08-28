@@ -16,6 +16,11 @@ knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(scales)
 library(glue)
+library(lubridate)
+library(R.utils)
+library(ncdf4)
+library(data.table)
+library(ggridges)
 ```
 
 ## GISS Surface Temperature Analysis (GISTEMP v4)
@@ -25,7 +30,6 @@ The GISS Surface Temperature Analysis ver. 4 (GISTEMP v4) is an estimate of glob
 ### Temperature Index Plot
 
 ```{r Temperature Index Plot}
-
 read_csv("data/GLB.Ts+dSST.csv", skip = 1, na = "***") %>% 
   select(year = Year, t_diff = `J-D`) %>% 
   drop_na() %>% 
@@ -58,7 +62,6 @@ GISTEMP Team, 2022: GISS Surface Temperature Analysis (GISTEMP), version 4. NASA
 ### Temperature Bar Plot
 
 ```{r Temperature Bar Plot}
-
 t_data <- read_csv("data/GLB.Ts+dSST.csv", skip = 1, na ="***") %>%
   select(year = Year, t_diff = `J-D`) %>% 
   drop_na()
@@ -88,7 +91,6 @@ t_data %>%
 ### Temperature Stripe Plot
 
 ```{r Temperature Stripe Plot}
-
 t_data <- read_csv("data/GLB.Ts+dSST.csv", skip = 1, na = "***") %>% 
   select(year = Year, t_diff = `J-D`) %>% 
   drop_na()
@@ -116,7 +118,6 @@ t_data %>%
 ### Temperature Lines Plot
 
 ```{r Temperature Lines Plot}
-
 t_diff <- read_csv("data/GLB.Ts+dSST.csv", skip = 1, na = "***") %>% 
   select(year = Year, month.abb) %>% 
   drop_na() %>% 
@@ -164,8 +165,7 @@ t_data %>%
   labs(x = NULL,
        y = "Temperature change since pre-industrial times [\u00B0C]",
        title = glue("Global Temperature Change Since {min(t_diff$year)} (monthly)")) +
-  theme(
-    panel.background = element_rect(fill = "black", colour = "white", size = 1),
+  theme(panel.background = element_rect(fill = "black", colour = "white", size = 1),
     plot.background = element_rect(fill = "#444444"),
     panel.grid = element_blank(),
     axis.text = element_text(colour = "white", size = 13),
@@ -176,15 +176,13 @@ t_data %>%
     legend.title = element_blank(),
     legend.background = element_rect(fill = NA),
     legend.text = element_text(colour = "white"),
-    legend.key.height = unit(55,"pt")
-  )
+    legend.key.height = unit(55,"pt"))
 
 ```
 
 ### Temperature Rug Plot
 
 ```{r Temperature Rug Plot}
-
 # Load data
 zone_data <- read_csv("https://data.giss.nasa.gov/gistemp/tabledata_v4/ZonAnn.Ts+dSST.csv")
 
@@ -228,6 +226,75 @@ zone_data %>%
         panel.grid.major.y = element_blank(),
         panel.grid.minor.y = element_line(colour = "white"),
         axis.ticks = element_blank())
+```
 
+### Temperature Ridgelines Plot
+```{r Temperature Ridgelines Plot}
+# Download data and unzip
+url <- 'https://data.giss.nasa.gov/pub/gistemp/gistemp250_GHCNv4.nc.gz'
+download.file(url, destfile = 'gistemp250_GHCNv4.nc.gz')
+gunzip('gistemp250_GHCNv4.nc.gz')
+
+nc_data <- nc_open('gistemp250_GHCNv4.nc')
+
+# Save print(nc) dump to a text file
+sink('gistemp250_GHCNv4.txt')
+print(nc_data)
+sink()
+
+lon <- ncvar_get(nc_data, 'lon')
+lat <- ncvar_get(nc_data,'lat', verbose = FALSE)
+t <- ncvar_get(nc_data, 'time')
+
+# Store data in 3D array
+t_anomaly.array <- ncvar_get(nc_data, 'tempanomaly')
+dim(t_anomaly.array)
+
+fillvalue <- ncatt_get(nc_data, 'tempanomaly', '_FillValue')
+t_anomaly.array[t_anomaly.array == fillvalue$value] <- NA
+
+# Wrangle data
+# Convert 3D array into tibble
+t_data <- as.data.table(t_anomaly.array) %>%
+  as_tibble() %>% 
+  select(longitude = V1, latitude = V2, time = V3, t_diff = value) %>% 
+  mutate(longitude = lon[longitude],
+         latitude = lat[latitude],
+         time = t[time] + as.Date('1800-01-01'),
+         year = year(time)) %>% 
+  group_by(year, longitude, latitude) %>% 
+  summarise(t_diff = mean(t_diff), .groups = 'drop') %>% 
+  filter(year >= 1950 & year < 2022) %>% 
+  group_by(year) %>% 
+  mutate(t_ave = mean(t_diff))
+
+# Plot
+t_data %>% 
+  ggplot(aes(x = t_diff, y = factor(year, levels = seq(2021, 1950, -1)), 
+             fill = t_ave)) +
+  geom_density_ridges(bandwidth = 0.2, scale = 3.5, size = 0.2) +
+  scale_fill_gradient2(low = 'darkblue', mid = 'white', high = 'darkred',
+                       midpoint = 0) +
+  coord_cartesian(xlim = c(-4.5, 4.5)) +
+  scale_x_continuous(breaks = seq(-4, 4, 2)) +
+  scale_y_discrete(breaks = seq(1950, 2021, 10)) +
+  labs(x = 'Temperature anomaly (\u00B0 C)',
+       y = '',
+       title = 'Land Temperature Anomalies') +
+  theme(panel.background = element_rect(fill = 'black'),
+        plot.background = element_rect(fill = 'black'),
+        panel.grid = element_blank(),
+        text = element_text(colour = 'white'),
+        axis.text = element_text(colour = 'white'),
+        axis.ticks = element_line(colour = 'white'),
+        axis.ticks.y = element_blank(),
+        axis.line.x = element_line(colour = 'white'),
+        axis.line.y = element_blank(),
+        legend.position = 'none')
+
+# Unlink ncdata
+nc_close(nc_data)
+unlink('gistemp250_GHCNv4.nc')
+unlink('gistemp250_GHCNv4.txt')
 ```
 
