@@ -22,14 +22,14 @@ t_data %>%
   pivot_wider(names_from = "month", values_from = "t_diff") %>% 
   mutate(ave_t = (Oct + Apr) / 2) %>% 
   ggplot(aes(x = -4 - Oct, xend = Apr, y = year, yend = year, colour = ave_t)) +
-  geom_vline(xintercept = c(-5, -4, 0, 1), colour = "gold") +
+  geom_vline(xintercept = c(-5, -4, 0, 1), colour = "#FFEC8B") +
   geom_label(data = grid_labels, aes(x = x, y = y, label = labels),
              inherit.aes = FALSE,
-             fill = "black", colour = "gold", label.size = 0, size = 5) +
+             fill = "black", colour = "#FFEC8B", label.size = 0, size = 5) +
   geom_segment(size = 0.9, lineend = "round") +
   geom_text(data = year_labels, aes(x = x, y = y, label = y),
             inherit.aes = FALSE,
-            colour = "#1C86EE", fontface = "bold", size = 5) +
+            colour = "#0000FF", fontface = "bold", size = 5) +
   scale_colour_gradient2(low = "darkblue", high = "darkred", mid = "white",
                          midpoint = 0, guide = "none") +
   scale_y_continuous(limits = c(NA, 2030), expand = c(0, 0)) +
