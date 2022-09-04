@@ -7,7 +7,6 @@ output:
     code_folding: hide
     toc: true
     toc_float: true
-    
 ---
 
 ```{r setup, include=FALSE}
@@ -90,147 +89,8 @@ t_data %>%
 
 ```
 
-### Temperature Stripe Plot
+### ### Temperature Ridgelines Plot
 
-```{r Temperature Stripe Plot}
-t_data <- read_csv("data/GLB.Ts+dSST.csv", skip = 1, na = "***") %>% 
-  select(year = Year, t_diff = `J-D`) %>% 
-  drop_na()
-
-t_data %>% 
-  ggplot(aes(x = year, y = 1, fill = t_diff)) +
-  geom_tile(show.legend = FALSE) +
-  scale_fill_stepsn(colours = c("#08306B", "white", "#67000D"),
-                    values = rescale(c(min(t_data$t_diff), 0 , max(t_data$t_diff))),
-                    n.breaks = 12) +
-  coord_cartesian(expand = FALSE) +
-  scale_x_continuous(breaks = seq(1890, 2020, 20)) +
-  labs(title = glue("Global Temperature Change ({min(t_data$year)}-{max(t_data$year)})")) +
-  theme_void() +
-  theme(
-    axis.text.x = element_text(colour = "white",
-                               margin = margin(t = 5, b = 10, unit = "pt")),
-    plot.title = element_text(colour = "white",
-                              margin = margin(b = 5, t = 10, unit ="pt"),
-                              hjust = 0.05),
-    plot.background = element_rect(fill = "black"))
-
-```
-
-### Temperature Lines Plot
-
-```{r Temperature Lines Plot}
-t_diff <- read_csv("data/GLB.Ts+dSST.csv", skip = 1, na = "***") %>% 
-  select(year = Year, month.abb) %>% 
-  drop_na() %>% 
-  pivot_longer(-year, names_to = "month", values_to = "t_diff") %>% 
-  mutate(month = factor(month, levels = month.abb))
-
-last_dec <- t_diff %>% 
-  filter(month == "Dec") %>% 
-  mutate(year = year + 1,
-         month = "last_Dec")
-
-next_jan <- t_diff %>% 
-  filter(month == "Jan") %>% 
-  mutate(year = year - 1,
-         month = "next_Jan")
-
-t_data <- bind_rows(last_dec, t_diff, next_jan) %>% 
-  mutate(month = factor(month, levels = c("last_Dec", month.abb, "next_Jan")),
-         month_number = as.numeric(month) - 1,
-         this_year = year == 2022)
-
-annotation <- t_data %>% 
-  slice_max(year) %>% 
-  slice_max(month_number)
-  
-t_data %>% 
-  ggplot(aes(x = month_number, y = t_diff, group = year, colour = year, size = this_year)) +
-  geom_hline(yintercept = 0, colour = "white") +
-  geom_line() +
-  geom_text(data = annotation,
-            aes(x = month_number, y = t_diff, label = year, colour = year), 
-            inherit.aes = FALSE,
-            hjust = 0, size = 5, nudge_x = 0.15, fontface = "bold") +
-  scale_x_continuous(breaks = 1:12,
-                     labels = month.abb,
-                     sec.axis = dup_axis(name = NULL, labels = NULL)) +
-  scale_y_continuous(breaks = seq(-2, 2, 0.2),
-                     sec.axis = dup_axis(name = NULL, labels = NULL)) +
-  scale_size_manual(breaks = c(FALSE, TRUE),
-                    values = c(0.25, 1), guide = "none") +
-  scale_colour_viridis_c(breaks = seq(1880, 2020, 20),
-                         guide = guide_colorbar(frame.colour = "white", 
-                                                frame.linewidth = 1)) +
-  coord_cartesian(xlim = c(1,12)) +
-  labs(x = NULL,
-       y = "Temperature change since pre-industrial times [\u00B0C]",
-       title = glue("Global Temperature Change Since {min(t_diff$year)} (monthly)")) +
-  theme(panel.background = element_rect(fill = "black", colour = "white", size = 1),
-    plot.background = element_rect(fill = "#444444"),
-    panel.grid = element_blank(),
-    axis.text = element_text(colour = "white", size = 13),
-    axis.ticks = element_line(colour = "white"),
-    axis.ticks.length = unit(-5, "pt"),
-    axis.title = element_text(colour = "white", size = 13),
-    plot.title = element_text(colour = "white", size = 15, hjust = 0.5),
-    legend.title = element_blank(),
-    legend.background = element_rect(fill = NA),
-    legend.text = element_text(colour = "white"),
-    legend.key.height = unit(55,"pt"))
-
-```
-
-### Temperature Rug Plot
-
-```{r Temperature Rug Plot}
-# Load data
-zone_data <- read_csv("https://data.giss.nasa.gov/gistemp/tabledata_v4/ZonAnn.Ts+dSST.csv")
-
-# Wrangle data
-bands <- rev(c("64N-90N", "44N-64N", "24N-44N", "EQU-24N", "24S-EQU", "44S-24S", "64S-44S", "90S-64S"))
-
-zone_data <- read_csv("https://data.giss.nasa.gov/gistemp/tabledata_v4/ZonAnn.Ts+dSST.csv") %>%
-  select(year = Year, all_of(bands)) %>%
-  pivot_longer(-year, names_to = "zone", values_to = "t_diff") %>%
-  mutate(zone = factor(zone, levels = bands),
-         zone_position = as.numeric(zone))
-
-current_year <- zone_data %>% filter(year == 2021)
-
-# Plot
-zone_data %>%
-  ggplot(aes(x = t_diff, xend = t_diff,
-             y = zone_position - 0.25, yend = zone_position + 0.25)) +
-  geom_segment(colour = "white", alpha = 0.25) +
-  geom_segment(data = current_year,
-               aes(colour = t_diff), size = 2, lineend = "round") +
-  scale_y_continuous(breaks = 1:8,
-                     labels = bands) +
-  scale_x_continuous(breaks = seq(-3, 4, 1),
-                     labels = seq(-3, 4, 1),
-                     limits = c(-3, 4)) +
-  scale_colour_gradient2(low = "darkblue", mid = "white", high = "darkred",
-                         midpoint = 0, guide = "none") +
-  labs(x = "Temperature anomaly (\u00B0C)", y = "",
-       title = "Temperature Anomaly by Latitude (1880 - 2021)",
-       subtitle = "Bars for 2021 are coloured by the size of the anomaly") +
-  theme(plot.background = element_rect(fill = "black", colour = "black"),
-        panel.background = element_rect(fill = "black"),
-        plot.title = element_text(colour = "white", face = "bold"),
-        plot.subtitle = element_text(colour = "gray", size = 9),
-        plot.title.position = "plot",
-        axis.text = element_text(colour = "white"),
-        axis.title = element_text(colour = "white"),
-        panel.grid.major.x = element_line(colour = "gray", size = 0.25),
-        panel.grid.minor.x = element_blank(),
-        panel.grid.major.y = element_blank(),
-        panel.grid.minor.y = element_line(colour = "white"),
-        axis.ticks = element_blank())
-```
-
-### Temperature Ridgelines Plot
 ```{r Temperature Ridgelines Plot}
 # Download data and unzip
 url <- 'https://data.giss.nasa.gov/pub/gistemp/gistemp250_GHCNv4.nc.gz'
@@ -300,3 +160,130 @@ unlink('gistemp250_GHCNv4.nc')
 unlink('gistemp250_GHCNv4.txt')
 ```
 
+### Temperature Anomalies Map
+
+```{r Temperature Anomalies Map}
+# Download data and unzip
+url <- 'https://data.giss.nasa.gov/pub/gistemp/gistemp250_GHCNv4.nc.gz'
+download.file(url, destfile = 'gistemp250_GHCNv4.nc.gz')
+gunzip('gistemp250_GHCNv4.nc.gz')
+
+nc_data <- nc_open('gistemp250_GHCNv4.nc')
+
+# Save print(nc) dump to a text file
+sink('gistemp250_GHCNv4.txt')
+print(nc_data)
+sink()
+
+lon <- ncvar_get(nc_data, 'lon')
+lat <- ncvar_get(nc_data,'lat', verbose = FALSE)
+t <- ncvar_get(nc_data, 'time')
+
+# Store data in 3D array
+t_anomaly.array <- ncvar_get(nc_data, 'tempanomaly')
+dim(t_anomaly.array)
+
+fillvalue <- ncatt_get(nc_data, 'tempanomaly', '_FillValue')
+t_anomaly.array[t_anomaly.array == fillvalue$value] <- NA
+
+# Wrangle data
+# Convert 3D array into tibble
+t_data <- as.data.table(t_anomaly.array) %>%
+  as_tibble() %>% 
+  select(longitude = V1, latitude = V2, time = V3, t_diff = value) %>% 
+  mutate(longitude = lon[longitude],
+         latitude = lat[latitude],
+         time = t[time] + as.Date('1800-01-01'),
+         year = year(time)) %>% 
+  group_by(year, longitude, latitude) %>% 
+  summarise(t_diff = mean(t_diff), .groups = 'drop') %>% 
+  filter(year >= 1950 & year < 2022) %>% 
+  mutate(decade = 10 * floor(year / 10),
+         single = year %% 10)
+  
+# Plot temperature raster maps
+t_data %>%
+  mutate(t_diff = case_when(t_diff < -4 ~ -4,
+                            t_diff > 4 ~ 4,
+                            TRUE ~ t_diff)) %>%
+  ggplot(aes(x = longitude, y = latitude, fill = t_diff)) +
+  geom_raster() +
+  facet_grid(decade~single, switch = 'y') +
+  scale_fill_gradient2(name = 'Temperature anomaly (\u00B0 C)',
+                       low = 'darkblue', mid = 'white', high = 'darkred',
+                       midpoint = 0,
+                       limits = c(-5, 5),
+                       breaks = c(-4, -2, 0, 2, 4)) +
+  coord_fixed(expand = FALSE) +
+  labs(x = '', y = '',
+       title = 'Global Temperature Anomalies (1950 - 2021)') +
+  theme(axis.text = element_blank(),
+        axis.ticks = element_blank(),
+        panel.background = element_rect(fill = 'black'),
+        plot.background = element_rect(fill = 'black'),
+        panel.grid = element_blank(),
+        strip.text.x = element_blank(),
+        strip.text.y.left = element_text(angle = 0, colour = 'white'),
+        strip.background = element_blank(),
+        title = element_text(colour = 'white', face = 'bold'),
+        legend.position = c(0.75, 0.04),
+        legend.direction = 'horizontal',
+        legend.title = element_text(colour = 'white', size = 6),
+        legend.text = element_text(colour = 'white', size = 5),
+        legend.background = element_rect(fill = 'black')) +
+  guides(fill = guide_colorbar(title.position = 'top',
+                               title.hjust = 0.5))
+
+# Unlink ncdata
+nc_close(nc_data)
+unlink('gistemp250_GHCNv4.nc')
+unlink('gistemp250_GHCNv4.txt')
+```
+
+### Temperature Rug Plot
+
+```{r Temperature Rug Plot}
+# Load data
+zone_data <- read_csv("https://data.giss.nasa.gov/gistemp/tabledata_v4/ZonAnn.Ts+dSST.csv")
+
+# Wrangle data
+bands <- rev(c("64N-90N", "44N-64N", "24N-44N", "EQU-24N", "24S-EQU", "44S-24S", "64S-44S", "90S-64S"))
+
+zone_data <- read_csv("https://data.giss.nasa.gov/gistemp/tabledata_v4/ZonAnn.Ts+dSST.csv") %>%
+  select(year = Year, all_of(bands)) %>%
+  pivot_longer(-year, names_to = "zone", values_to = "t_diff") %>%
+  mutate(zone = factor(zone, levels = bands),
+         zone_position = as.numeric(zone))
+
+current_year <- zone_data %>% filter(year == 2021)
+
+# Plot
+zone_data %>%
+  ggplot(aes(x = t_diff, xend = t_diff,
+             y = zone_position - 0.25, yend = zone_position + 0.25)) +
+  geom_segment(colour = "white", alpha = 0.25) +
+  geom_segment(data = current_year,
+               aes(colour = t_diff), size = 2, lineend = "round") +
+  scale_y_continuous(breaks = 1:8,
+                     labels = bands) +
+  scale_x_continuous(breaks = seq(-3, 4, 1),
+                     labels = seq(-3, 4, 1),
+                     limits = c(-3, 4)) +
+  scale_colour_gradient2(low = "darkblue", mid = "white", high = "darkred",
+                         midpoint = 0, guide = "none") +
+  labs(x = "Temperature anomaly (\u00B0C)", y = "",
+       title = "Temperature Anomaly by Latitude (1880 - 2021)",
+       subtitle = "Bars for 2021 are coloured by the size of the anomaly") +
+  theme(plot.background = element_rect(fill = "black", colour = "black"),
+        panel.background = element_rect(fill = "black"),
+        plot.title = element_text(colour = "white", face = "bold"),
+        plot.subtitle = element_text(colour = "gray", size = 9),
+        plot.title.position = "plot",
+        axis.text = element_text(colour = "white"),
+        axis.title = element_text(colour = "white"),
+        panel.grid.major.x = element_line(colour = "gray", size = 0.25),
+        panel.grid.minor.x = element_blank(),
+        panel.grid.major.y = element_blank(),
+        panel.grid.minor.y = element_line(colour = "white"),
+        axis.ticks = element_blank())
+```
